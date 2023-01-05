@@ -5,4 +5,4 @@ FMMLoss :
 SchemeLoss:
     kargs :  
       spatial : 2
-    w : 1.
+    w : .1

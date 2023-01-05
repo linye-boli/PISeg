@@ -8,7 +8,8 @@ import skfmm
 from tqdm import tqdm 
 
 def get_unet3d_loader(
-    traindata_dir, 
+    traindata_dir,
+    valdata_dir,
     train_batchsize=2, 
     num_workers=4,
     num_train=31, 
@@ -25,15 +26,28 @@ def get_unet3d_loader(
     train_boundaries = sorted(
         glob.glob(os.path.join(traindata_dir, "boundariesTr", "*.npz")))
 
-    data_dicts = [
+    val_images = sorted(
+        glob.glob(os.path.join(valdata_dir, "imagesTr", "*.npz")))
+    val_labels = sorted(
+        glob.glob(os.path.join(valdata_dir, "labelsTr", "*.npz")))
+    val_sdfs = sorted(
+        glob.glob(os.path.join(valdata_dir, "sdfsTr", "*.npz")))
+    val_boundaries = sorted(
+        glob.glob(os.path.join(valdata_dir, "boundariesTr", "*.npz")))
+
+    traindata_dicts = [
         {"image": image_name, "label": label_name, 'sdf':sdf_name, "boundary": boundary_name}
-        for image_name, label_name, sdf_name, boundary_name in zip(train_images, train_labels, train_sdfs, train_boundaries)
-    ]
+        for image_name, label_name, sdf_name, boundary_name in zip(train_images, train_labels, train_sdfs, train_boundaries)]
+    
+    valdata_dicts = [
+        {"image": image_name, "label": label_name, 'sdf':sdf_name, "boundary": boundary_name}
+        for image_name, label_name, sdf_name, boundary_name in zip(val_images, val_labels, val_sdfs, val_boundaries)]
+
 
     if sample:
-        train_files, val_files = data_dicts[:4], data_dicts[-4:]
+        train_files, val_files = traindata_dicts[:4], traindata_dicts[-4:]
     else:
-        train_files, val_files = data_dicts[:num_train], data_dicts[num_train:]
+        train_files, val_files = valdata_dicts[:num_train], valdata_dicts[num_train:]
 
         # setup transforms for training and validation 
             # setup transforms for training and validation 
@@ -47,7 +61,10 @@ def get_unet3d_loader(
             transforms.RandRotated(
                 keys=["image", "label", "sdf", "boundary"], 
                 range_x=0.4, range_y=0.4, range_z=0.4, 
-                prob=0.1, keep_size=True, mode=['bilinear', 'nearest', 'bilinear', 'nearest'],  align_corners=True)
+                prob=0.5, keep_size=True, mode=['bilinear', 'nearest', 'bilinear', 'nearest'],  align_corners=True),
+            transforms.RandFlipd(
+                keys=["image", "label", "sdf", "boundary"], 
+                prob=0.1, spatial_axis=[0,1,2])
         ])
 
     val_transforms = transforms.Compose(

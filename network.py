@@ -307,6 +307,7 @@ class FADeepONet(nn.Module):
         return outputs
 
 from pino.fourier2d import FNO2d
+from pino.fourier3d import FNO3d
 
 class FNO(nn.Module):
     def __init__(self, out_channels, spatial_dims=3):
@@ -316,20 +317,30 @@ class FNO(nn.Module):
         self.spatial_dims = spatial_dims
 
         if spatial_dims == 2:
-            self.fno2d = FNO2d(modes1=[16]*4, modes2=[16]*4, in_dim=3, out_dim=out_channels, width=64)
+            self.fno2d = FNO2d(
+                modes1=[12]*4, modes2=[12]*4, in_dim=3, out_dim=out_channels, width=64)
+        if spatial_dims == 3:
+            self.fno3d = FNO3d(
+                modes1=[24]*4, modes2=[24]*4, modes3=[24]*4,
+                in_dim=4, out_dim=out_channels, width=16)
+        
 
     def forward(self, img):
 
         if self.spatial_dims == 2:
             grids = coords_like(img, spatial=2, permute=False)
-            x = torch.cat([img, grids], axis=1).permute(0,2,3,1)
-        
-        u = self.fno2d(x)
-
-        if self.spatial_dims == 2:
+            x = torch.cat([img, grids], axis=1).permute(0,2,3,1)        
+            u = self.fno2d(x)
             u_grids = u.permute(0,3,1,2)
+        if self.spatial_dims == 3:
+            grids = coords_like(img, spatial=3, permute=False)
+            x = torch.cat([img, grids], axis=1).permute(0,2,3,4,1)        
+            u = self.fno3d(x)
+            u_grids = u.permute(0,4,1,2,3)
 
         return {'outputs':u_grids}
+
+
 
 
 if __name__ == '__main__':

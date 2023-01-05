@@ -89,16 +89,42 @@ def preprocess_3d_dataset(
             np.savez_compressed(label_outpath, label)
             print('save label at : ', label_outpath)
 
+        # if not os.path.exists(sdf_outpath):
+        #     label = sample['label']
+        #     label = label[0].numpy().astype('uint8')
+        #     sdf = []
+        #     boundary = []
+        #     cls = np.unique(label)
+        #     for c in cls:
+        #         sdf_ = skfmm.distance(0.5 - (label==c))
+        #         bd_ = levelset2boundary(sdf_)
+        #         sdf_ = sdf_ - sdf_ * bd_
+        #         sdf.append(sdf_)
+        #         boundary.append(bd_)
+            
+        #     sdf = np.stack(sdf, axis=0).astype(np.float32)
+        #     np.savez_compressed(sdf_outpath, sdf)
+        #     print('save sdf at : ', sdf_outpath)
+
+        #     boundary = np.stack(boundary, axis=0).astype(np.bool)
+        #     np.savez_compressed(boundary_outpath, boundary)
+        #     print('save boundary at : ', boundary_outpath)
+        
         if not os.path.exists(sdf_outpath):
             label = sample['label']
             label = label[0].numpy().astype('uint8')
             sdf = []
             boundary = []
+            cnt = []
+
             cls = np.unique(label)
             for c in cls:
-                sdf_ = skfmm.distance(0.5 - (label==c))
-                bd_ = levelset2boundary(sdf_)
-                sdf_ = sdf_ - sdf_ * bd_
+                # inside object is positive
+                label_ = label == c
+                label_ = label_ - 0.5
+                bd_ = levelset2boundary(label_)
+                ls_ = label_*(1-bd_)
+                sdf_ = skfmm.distance(ls_, dx=(1/(spatial_size[0]-1), 1/(spatial_size[1]-1), 1/(spatial_size[2]-1)), order=1)
                 sdf.append(sdf_)
                 boundary.append(bd_)
             
@@ -110,18 +136,6 @@ def preprocess_3d_dataset(
             np.savez_compressed(boundary_outpath, boundary)
             print('save boundary at : ', boundary_outpath)
 
-        # if not os.path.exists(boundary_outpath):
-        #     label = sample['label']
-        #     label = label[0].numpy().astype('uint8')
-        #     boundary = []
-        #     cls = np.unique(label)
-        #     for c in cls:
-        #         sdf = skfmm.distance(0.5 - (label==c))
-        #         boundary.append(levelset2boundary(sdf))
-                
-        #     boundary = np.stack(boundary, axis=0).astype(np.bool)
-        #     np.savez_compressed(boundary_outpath, boundary)
-        #     print('save boundary at : ', boundary_outpath)
 
 def preprocess_2d_dataset(
     origin_dir, 
@@ -241,19 +255,34 @@ def preprocess_2d_dataset(
 if __name__ == '__main__':
 
     # preprocess MSD Spleen dataset
-    # preprocess_3d_dataset(
-    #     '/dataset/MSD/Task09_Spleen/', 
-    #     '/dataset/MSD/SpleenPreprocess/', 
-    #     margin=(16, 16, 16), 
-    #     spatial_size=(160,160,48), 
-    #     num_workers=16)
+    preprocess_3d_dataset(
+        origin_dir='/dataset/MSD/Task09_Spleen/', 
+        out_dir='/dataset/MSD/SpleenPreprocess_64x64x64/', 
+        margin=(32, 32, 32), 
+        spatial_size=(64,64,64),
+        num_workers=16)
+    
+    preprocess_3d_dataset(
+        origin_dir='/dataset/MSD/Task09_Spleen/', 
+        out_dir='/dataset/MSD/SpleenPreprocess_128x128x128/', 
+        margin=(32, 32, 32), 
+        spatial_size=(128,128,128),
+        num_workers=16)
+    
+    preprocess_3d_dataset(
+        origin_dir='/dataset/MSD/Task09_Spleen/', 
+        out_dir='/dataset/MSD/SpleenPreprocess_256x256x256/', 
+        margin=(32, 32, 32), 
+        spatial_size=(256,256,256),
+        num_workers=16)
+    
     
     # # preprocess segthor dataset
-    # preprocess_dataset(
+    # preprocess_3d_dataset(
     #     '/dataset/segthor/segthor/', 
     #     '/dataset/segthor/segthorPreprocess/', 
-    #     margin=(32, 32, 64), 
-    #     spatial_size=(160,160,128),
+    #     margin=(64, 64, 64), 
+    #     spatial_size=(128,128,128),
     #     num_workers=16)
     
     # preprocess CXR SHENZHEN leftlung dataset 
@@ -264,30 +293,30 @@ if __name__ == '__main__':
     #     spatial_size=(128, 128)
     # )
 
-    preprocess_2d_dataset(
-        origin_dir = '/dataset/CXR',
-        out_dir = '/dataset/CXR/leftlungSZPreprocess_64x64',
-        margin=256,
-        spatial_size=(64, 64)
-    )
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CXR',
+    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_64x64',
+    #     margin=256,
+    #     spatial_size=(64, 64)
+    # )
 
-    preprocess_2d_dataset(
-        origin_dir = '/dataset/CXR',
-        out_dir = '/dataset/CXR/leftlungSZPreprocess_128x128',
-        margin=256,
-        spatial_size=(128, 128)
-    )
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CXR',
+    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_128x128',
+    #     margin=256,
+    #     spatial_size=(128, 128)
+    # )
     
-    preprocess_2d_dataset(
-        origin_dir = '/dataset/CXR',
-        out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
-        margin=256,
-        spatial_size=(256, 256)
-    )
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CXR',
+    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
+    #     margin=256,
+    #     spatial_size=(256, 256)
+    # )
 
-    preprocess_2d_dataset(
-        origin_dir = '/dataset/CXR',
-        out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
-        margin=256,
-        spatial_size=(512, 512)
-    )
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CXR',
+    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
+    #     margin=256,
+    #     spatial_size=(512, 512)
+    # )

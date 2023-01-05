@@ -274,27 +274,31 @@ def draw_unet2d_result(img, pred, boundary, ls=None, err=None, alpha=0.2, levels
             plt.close(fig)
             sdf_im.append(PILToTensor()(im)) 
 
-        if err is not None:
-            err_im = []
-            for ic in range(1, nc):
-                fig = Figure(figsize=(4,4), dpi=100)
-                canvas = FigureCanvasAgg(fig)
-                ax = fig.add_subplot()
-                im = ax.imshow(err[ic], cmap='jet', extent=(-1,1,1,-1), vmin=0, vmax=0.03)
-                divider = make_axes_locatable(ax)
-                cax = divider.append_axes('right', size='2%', pad=0.1)
-                cbar = fig.colorbar(im, cax=cax, orientation='vertical')
-                cbar.formatter.set_powerlimits((0, 0))
-                cbar.formatter.set_useMathText(True)
-                canvas.draw()
-                im = Image.fromarray(np.asarray(canvas.buffer_rgba()))
-                plt.close(fig)
-                err_im.append(PILToTensor()(im)) 
+    if err is not None:
+        err_im = []
+        for ic in range(1, nc):
+            fig = Figure(figsize=(4,4), dpi=100)
+            canvas = FigureCanvasAgg(fig)
+            ax = fig.add_subplot()
+            im = ax.imshow(err[ic], cmap='jet', extent=(-1,1,1,-1), vmin=0, vmax=0.03)
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes('right', size='2%', pad=0.1)
+            cbar = fig.colorbar(im, cax=cax, orientation='vertical')
+            cbar.formatter.set_powerlimits((0, 0))
+            cbar.formatter.set_useMathText(True)
+            canvas.draw()
+            im = Image.fromarray(np.asarray(canvas.buffer_rgba()))
+            plt.close(fig)
+            err_im.append(PILToTensor()(im)) 
+    
+    vis_out = {'pred': pred_im}
+    if ls is not None:
+        vis_out['sdf'] = sdf_im
+    
+    if err is not None:
+        vis_out['err'] = err_im
+    return vis_out
 
-            return {'pred': pred_im, 'sdf':sdf_im, 'err':err_im}
-        return {'pred': pred_im, 'sdf':sdf_im}
-    else:
-        return {'pred': pred_im}
 
 from torchvision.transforms import PILToTensor, ToPILImage
 
@@ -332,11 +336,12 @@ def draw_pinns3d_result(boundary, ls, num_slice=10, levels=[-0.5, -0.1, 0, 0.1, 
     
     return {'sdf3d' : sdf3d}
 
-def draw_unet3d_result(img, pred, boundary, ls=None, num_slice=10, alpha=0.2, levels=[-0.5, -0.1, 0, 0.1, 0.5]):
+def draw_unet3d_result(img, pred, boundary, ls=None, err=None, num_slice=10, alpha=0.2, levels=[-0.5, -0.1, 0, 0.1, 0.5]):
     nc, nx, ny, nz = boundary.shape
 
     pred3d = {}
     sdf3d = {}
+    err3d = {}
     for ic in range(1, nc):
         slice_idx = select_slice(boundary[[ic]], num_slice = num_slice)
         slice_pi = []
@@ -358,7 +363,7 @@ def draw_unet3d_result(img, pred, boundary, ls=None, num_slice=10, alpha=0.2, le
         slice_pi = make_grid(slice_pi, 5)
         slice_pb = make_grid(slice_pb, 5)
 
-        pred3d[ic] = (ToPILImage()(slice_pi), ToPILImage()(slice_pb)) 
+        pred3d[ic] = (slice_pi, slice_pb) 
         
         if ls is not None:
             slice_bl = []
@@ -369,7 +374,7 @@ def draw_unet3d_result(img, pred, boundary, ls=None, num_slice=10, alpha=0.2, le
                 x, y = np.linspace(-1,1,num=nx), np.linspace(-1,1,num=ny)
                 X, Y = np.meshgrid(x, y)
 
-                fig = Figure(figsize=(2,2), dpi=100)
+                fig = Figure(figsize=(4,4), dpi=100)
                 fig.subplots_adjust(0,0,1,1)
                 canvas = FigureCanvasAgg(fig)
                 ax = fig.add_subplot()
@@ -384,12 +389,40 @@ def draw_unet3d_result(img, pred, boundary, ls=None, num_slice=10, alpha=0.2, le
                 plt.close(fig)
             
             slice_bl = make_grid(slice_bl, 5)
-            sdf3d[ic] = ToPILImage()(slice_bl)
-    
+            sdf3d[ic] = slice_bl
+        
+        if err is not None:
+            slice_err = []
+            for s in slice_idx:
+                se = err[ic, :, :, s]
+
+                fig = Figure(figsize=(4,4), dpi=100)
+                canvas = FigureCanvasAgg(fig)
+                ax = fig.add_subplot()
+                im = ax.imshow(se, cmap='jet', extent=(-1,1,1,-1), vmin=0, vmax=0.03)
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes('right', size='2%', pad=0.1)
+                cbar = fig.colorbar(im, cax=cax, orientation='vertical')
+                cbar.formatter.set_powerlimits((0, 0))
+                cbar.formatter.set_useMathText(True)
+                canvas.draw()
+                im = Image.fromarray(np.asarray(canvas.buffer_rgba()))
+                im = PILToTensor()(im)
+                plt.close(fig)
+                slice_err.append(im)
+            slice_err = make_grid(slice_err, 5)
+            err3d[ic] = slice_err
+
+    vis_out = {'pred':pred3d}
+
     if ls is not None:
-        return pred3d, sdf3d 
-    else:
-        return pred3d
+        vis_out['sdf'] = sdf3d
+    
+    if err is not None:
+        vis_out['err'] = err3d    
+    
+    return vis_out
+
 
 def random_subvolume(u, grids, sub_dim, spatial=3):
 

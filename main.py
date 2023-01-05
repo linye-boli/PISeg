@@ -88,13 +88,10 @@ def main():
     if args.model_name == 'pinns_2d':
         args.logdir = os.path.join(
             args.logdir, args.model_name, str(args.sample_idx), 'seed_{:}'.format(args.seed))
-    if args.model_name == 'deeponet_2d':
-        args.logdir = os.path.join(
-            args.logdir, args.model_name, 'seed_{:}'.format(args.seed))
-    if args.model_name == 'fadeeponet_2d':
-        args.logdir = os.path.join(
-            args.logdir, args.model_name, 'seed_{:}'.format(args.seed))
-    if args.model_name in ['fno_2d', 'unet_2d', 'pino_2d']:
+    if args.model_name in [
+        'fno_2d', 'unet_2d', 'pino_2d', 
+        'fno_3d', 'unet_3d', 'pino_3d',
+        'deeponet_2d', 'fadeeponet_2d']:
         args.logdir = os.path.join(
             args.logdir, args.model_name, 'seed_{:}'.format(args.seed))
     
@@ -119,18 +116,19 @@ def main():
             data_dir = args.data_dir,
             train_batchsize=args.batch_size,
             num_workers = args.workers)
-    if args.model_name in ['unet_2d', 'fno_2d', 'pino_2d']:
+    if args.model_name in [
+        'unet_2d', 'fno_2d', 'pino_2d', 'fadeeponet_2d']:
         train_loader, val_loader = get_unet2d_loader(
             traindata_dir = args.traindata_dir,
             valdata_dir = args.valdata_dir, 
             train_batchsize=args.batch_size,
             num_workers = args.workers)
-    if args.model_name == 'fadeeponet_2d':
-        train_loader, val_loader = get_unet2d_loader(
-            data_dir = args.data_dir,
+    if args.model_name in ['unet_3d', 'fno_3d']:
+        train_loader, val_loader = get_unet3d_loader(
+            traindata_dir = args.traindata_dir,
+            valdata_dir = args.valdata_dir, 
             train_batchsize=args.batch_size,
-            num_workers = args.workers,
-            sample=args.is_sample)
+            num_workers = args.workers)
 
     post_trans = post_transform(args.num_cat)
 
@@ -150,12 +148,18 @@ def main():
         model = PINNS(spatial_dim=2, out_channels=args.num_cat)
     if args.model_name == 'deeponet_2d':
         model = DeepONet(spatial_dim=2, out_channels=args.num_cat, feat_dim=100)
+    
     if args.model_name == 'unet_2d':
         model = UNet(spatial_dims=2, out_channels=args.num_cat, tanh=args.tanh)
+    if args.model_name == 'unet_3d':
+        model = UNet(spatial_dims=3, out_channels=args.num_cat, tanh=args.tanh)
+
     if args.model_name == 'fadeeponet_2d':
         model = FADeepONet(spatial_dims=2, out_channels=args.num_cat)
     if args.model_name in ['fno_2d', 'pino_2d']:
         model = FNO(spatial_dims=2, out_channels=args.num_cat)
+    if args.model_name in ['fno_3d', 'pino_3d']:
+        model = FNO(spatial_dims=3, out_channels=args.num_cat)
 
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Total parameters count", pytorch_total_params)
