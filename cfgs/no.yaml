@@ -1,0 +1,8 @@
+FMMLoss : 
+    kargs : 
+      reduction : 'mean'
+    w : 1.
+EikBoundaryLoss :
+    kargs :
+      reduction : 'mean'
+    w : 1.

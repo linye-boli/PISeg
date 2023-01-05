@@ -1,0 +1,10 @@
+DiceLoss : 
+    kargs : 
+      to_onehot_y : True 
+      softmax : True 
+    w : 1
+BoundaryLoss : 
+    kargs : 
+      idc : [0,1]
+      k : 2
+    w : 0

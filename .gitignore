@@ -1,0 +1,11 @@
+# ignore runs 
+runs/ 
+
+# ignore dataset2d
+dataset2d/
+
+# ignore notebooks 
+notebooks/
+
+# ignore pycache
+__pycache__

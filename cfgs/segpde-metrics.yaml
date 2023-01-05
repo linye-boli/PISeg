@@ -1,0 +1,19 @@
+DiceMetric : 
+    kargs : 
+      include_background : False
+      reduction : "mean"
+HausdorffDistanceMetric :
+    kargs : 
+      include_background : False
+      reduction : "mean"
+      percentile : 95
+SurfaceDistanceMetric :
+    kargs :
+      include_background : False
+      reduction : "mean"
+PDEError : 
+    kargs : 
+      reduction : "mean"      
+BCError :
+    kargs : 
+      reduction : "mean"

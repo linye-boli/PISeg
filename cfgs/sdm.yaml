@@ -1,0 +1,13 @@
+DiceLoss : 
+    kargs : 
+      to_onehot_y : True 
+      softmax : False
+    w : 1
+SDMProdLoss : 
+    kargs : 
+      smooth : 0.00001
+    w : 10
+L1Loss : 
+    kargs : 
+      reduction : 'mean'
+    w : 10

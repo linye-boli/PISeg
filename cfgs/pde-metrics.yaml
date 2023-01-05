@@ -1,0 +1,7 @@
+PDEError : 
+    kargs : 
+      reduction : "mean"
+      
+BCError :
+    kargs : 
+      reduction : "mean"

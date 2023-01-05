@@ -1,0 +1,16 @@
+python main.py \
+    --model_name=pinns_2d \
+    --loss_cfg=/workdir/PISegFull/cfgs/eik.yaml \
+    --metric_cfg=/workdir/PISegFull/cfgs/pde-metrics.yaml \
+    --logdir=/workdir/PISegFull/runs/ \
+    --num_cat=2 \
+    --optim_lr=1e-3 \
+    --lrschedule=warmup_cosine \
+    --data_dir=/dataset/CXR/leftlungSZPreprocess/ \
+    --deterministic=1 \
+    --max_epochs=20000 \
+    --seed=0 \
+    --sample_idx=501 \
+    --batch_size=1 \
+    --val_every=100 \
+    --warmup_epochs=100 \

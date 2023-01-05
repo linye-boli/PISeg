@@ -1,0 +1,18 @@
+EikBoundaryLoss :
+    kargs :
+      reduction : 'mean'
+    w : 0.
+EikPDELoss:
+    kargs :  
+      g : 1
+    w : 1.
+FMMLoss : 
+    kargs : 
+      reduction : 'mean'
+    w : 1.
+SDFDiceLoss : 
+    kargs : 
+      to_prob : True
+      to_onehot_y : True
+      softmax : False
+    w : 1.

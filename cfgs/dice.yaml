@@ -1,0 +1,5 @@
+DiceLoss : 
+    kargs : 
+      to_onehot_y : True 
+      softmax : True 
+    w : 1
