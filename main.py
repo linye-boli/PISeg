@@ -26,8 +26,7 @@ from network import (
     DeepONet,
     CNNDeepONet,
     FADeepONet,
-    FNO,
-    PINO
+    FNO
 )
 
 from losses import Losses
@@ -92,9 +91,6 @@ def main():
     if args.model_name == 'deeponet_2d':
         args.logdir = os.path.join(
             args.logdir, args.model_name, 'seed_{:}'.format(args.seed))
-    # if args.model_name == 'unet_2d':
-    #     args.logdir = os.path.join(
-    #         args.logdir, args.model_name, 'seed_{:}'.format(args.seed))
     if args.model_name == 'fadeeponet_2d':
         args.logdir = os.path.join(
             args.logdir, args.model_name, 'seed_{:}'.format(args.seed))
@@ -158,11 +154,8 @@ def main():
         model = UNet(spatial_dims=2, out_channels=args.num_cat, tanh=args.tanh)
     if args.model_name == 'fadeeponet_2d':
         model = FADeepONet(spatial_dims=2, out_channels=args.num_cat)
-    if args.model_name == 'fno_2d':
+    if args.model_name in ['fno_2d', 'pino_2d']:
         model = FNO(spatial_dims=2, out_channels=args.num_cat)
-    if args.model_name == 'pino_2d':
-        model = PINO(spatial_dims=2, out_channels=args.num_cat)
-    
 
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Total parameters count", pytorch_total_params)

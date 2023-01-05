@@ -1,8 +1,8 @@
 python main.py \
     --model_name=unet_2d \
-    --loss_cfg=/workdir/PISegFull/cfgs/no.yaml \
-    --metric_cfg=/workdir/PISegFull/cfgs/no-metrics.yaml \
-    --logdir=/workdir/PISegFull/runs/ \
+    --loss_cfg=/workdir/PISeg/PISeg/cfgs/no.yaml \
+    --metric_cfg=/workdir/PISeg/PISeg/cfgs/no-metrics.yaml \
+    --logdir=/workdir/PISeg/PISeg/runs/ \
     --num_cat=2 \
     --optim_lr=1e-3 \
     --lrschedule=warmup_cosine \

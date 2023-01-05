@@ -140,11 +140,8 @@ def val_epoch(
             metrics.calc_metrics(output, gts)
 
             if sample_idx == idx:
-                if args.model_name == 'pino_2d':
-                    sample = {'sdf' : output['outputs'], 'gt_sdf':sdf, 'boundary': boundary, 'pred' : post_pred, 'image' : inps, 'gnorm': output['grad_norms']}
-                else:
-                    sample = {
-                        'sdf' : output['outputs'], 'gt_sdf':sdf, 'boundary': boundary, 'pred' : post_pred, 'image' : inps}
+                sample = {
+                    'sdf' : output['outputs'], 'gt_sdf':sdf, 'boundary': boundary, 'pred' : post_pred, 'image' : inps}
         
     return sample
 
@@ -168,18 +165,7 @@ def vis_result(sample, writer, epoch, model_name):
         for ic in range(1, nc):
             writer.add_image('val/deeponet_2d/pred_sdf-{:}'.format(ic), vis_out['sdf'][ic-1], epoch)
     
-    # if model_name == 'unet_2d':
-    #     image = sample['image'][0].detach().cpu().as_tensor()
-    #     boundary = sample['boundary'][0].detach().cpu().as_tensor()
-    #     pred = sample['pred'][0].detach().cpu().as_tensor()
-    #     vis_out = draw_unet2d_result(image, pred, boundary)
-    #     nc = pred.shape[0]
-
-    #     for ic in range(1, nc):
-    #         writer.add_image('val/unet_2d/pred_img-{:}'.format(ic), vis_out['pred'][ic-1][0], epoch)
-    #         writer.add_image('val/unet_2d/pred_boundary-{:}'.format(ic), vis_out['pred'][ic-1][1], epoch)
-
-    if model_name in ['fadeeponet_2d', 'pino_2d']:
+    if model_name in ['fadeeponet_2d']:
         image = sample['image'][0].detach().cpu().as_tensor()
         boundary = sample['boundary'][0].detach().cpu().as_tensor()
         pred = sample['pred'][0].detach().cpu().as_tensor()
@@ -195,7 +181,7 @@ def vis_result(sample, writer, epoch, model_name):
             writer.add_image('val/{:}/pred_sdf-{:}'.format(model_name, ic), vis_out['sdf'][ic-1], epoch)
             writer.add_image('val/{:}/gnorm_err-{:}'.format(model_name, ic), vis_out['err'][ic-1], epoch)            
     
-    if model_name in ['fno_2d', 'unet_2d']:
+    if model_name in ['fno_2d', 'unet_2d', 'pino_2d']:
         image = sample['image'][0].detach().cpu().as_tensor()
         boundary = sample['boundary'][0].detach().cpu().as_tensor()
         pred = sample['pred'][0].detach().cpu().as_tensor()

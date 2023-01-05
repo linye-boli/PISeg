@@ -220,7 +220,7 @@ def preprocess_2d_dataset(
                 label_ = label_ - 0.5
                 bd_, cnt_ = levelset2boundary2D(label_, True)
                 ls_ = label_*(1-bd_)
-                sdf_ = skfmm.distance(ls_, dx=(1/(spatial_size[0]-1), 1/(spatial_size[1]-1)), order=2)
+                sdf_ = skfmm.distance(ls_, dx=(1/(spatial_size[0]-1), 1/(spatial_size[1]-1)), order=1)
                 sdf.append(sdf_)
                 boundary.append(bd_)
                 cnt.append(cnt_)
@@ -265,22 +265,29 @@ if __name__ == '__main__':
     # )
 
     preprocess_2d_dataset(
-        origin_dir = '/workdir/PISegFull/dataset2d',
+        origin_dir = '/dataset/CXR',
         out_dir = '/dataset/CXR/leftlungSZPreprocess_64x64',
         margin=256,
         spatial_size=(64, 64)
     )
 
     preprocess_2d_dataset(
-        origin_dir = '/workdir/PISegFull/dataset2d',
+        origin_dir = '/dataset/CXR',
         out_dir = '/dataset/CXR/leftlungSZPreprocess_128x128',
         margin=256,
         spatial_size=(128, 128)
     )
     
     preprocess_2d_dataset(
-        origin_dir = '/workdir/PISegFull/dataset2d',
+        origin_dir = '/dataset/CXR',
         out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
         margin=256,
         spatial_size=(256, 256)
+    )
+
+    preprocess_2d_dataset(
+        origin_dir = '/dataset/CXR',
+        out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
+        margin=256,
+        spatial_size=(512, 512)
     )

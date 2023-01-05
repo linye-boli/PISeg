@@ -331,40 +331,6 @@ class FNO(nn.Module):
 
         return {'outputs':u_grids}
 
-from utils import grid_gradient_norm, random_subvolume
-class PINO(nn.Module):
-    def __init__(self, out_channels, spatial_dims=3):
-        super(PINO, self).__init__()
-        
-        self.out_channels = out_channels
-        self.spatial_dims = spatial_dims
-
-        if spatial_dims == 2:
-            self.fno2d = FNO2d(modes1=[12]*4, modes2=[12]*4, in_dim=3, out_dim=out_channels, width=64)
-
-    def forward(self, img):
-
-        if self.spatial_dims == 2:
-            grids = coords_like(img, spatial=2, permute=False)            
-            grids.requires_grad_()
-            x = torch.cat([img, grids], axis=1).permute(0,2,3,1)
-            u = self.fno2d(x)
-            u_grids = u.permute(0,3,1,2)
-
-            if self.training:
-                i = np.random.randint(low=0, high=4)
-                img_sub = img[:,:,i::4,i::4].clone()
-                grids_sub = grids[:,:,i::4,i::4].clone()
-                grids_sub.requires_grad_()
-                x_sub = torch.cat([img_sub, grids_sub], axis=1).permute(0,2,3,1)
-                u_sub = self.fno2d(x_sub)
-                u_gridssub = u_sub.permute(0,3,1,2)
-                gnorm = grid_gradient_norm(u_gridssub, grids_sub, spatial=2)
-            else:
-                gnorm = grid_gradient_norm(u_grids, grids, spatial=2)
-
-        return {'outputs':u_grids, 'grad_norms': gnorm}
-
 
 if __name__ == '__main__':
     img3d = torch.rand((4,1,64,64,32))

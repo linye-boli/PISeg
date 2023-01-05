@@ -74,9 +74,8 @@ class FMMLoss(nn.Module):
 
 
 class SchemeLoss(nn.Module):
-    def __init__(self, reduction='sum', spatial=2):
+    def __init__(self, spatial=2):
         super(SchemeLoss, self).__init__()
-        self.reduction = reduction 
         self.spatial = spatial
 
     def forward(self, u):
@@ -92,7 +91,7 @@ class SchemeLoss(nn.Module):
             u_up = u[:,:,:-2,1:-1]
             u_down = u[:,:,2:,1:-1]
 
-            u_xmax = torch.relu(torch.max(u_center - u_left, u_center - u_right)) / dx
+            u_xmax = torch.relu(torch.max(u_center - u_left, u_center - u_right)) / dx  #godunov
             u_ymax = torch.relu(torch.max(u_center - u_up, u_center - u_down)) / dy
 
             loss = ((u_xmax + u_ymax)**0.5 - 1).abs()
