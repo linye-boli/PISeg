@@ -41,7 +41,8 @@ def train_epoch(
         
         if args.model_name in [
             'unet_2d', 'fno_2d', 'pino_2d',
-            'unet_3d', 'fno_3d', 'pino_3d']:
+            'unet_3d', 'fno_3d', 'pino_3d',
+            'uno_2d', 'uno_3d']:
             inps = batch_data['image'].to(device)
             label = batch_data['label'].to(device)
             boundary = batch_data['boundary'].to(device)
@@ -126,7 +127,7 @@ def val_epoch(
         
         if args.model_name in [
             'fno_2d', 'pino_2d', 'unet_2d', 
-            'unet_3d', 'fno_3d']:
+            'unet_3d', 'fno_3d', 'uno_2d', 'uno_3d']:
             inps = batch_data['image'].to(device)
             label = batch_data['label'].to(device)
             boundary = batch_data['boundary'].to(device)
@@ -185,7 +186,7 @@ def vis_result(sample, writer, epoch, model_name):
             writer.add_image('val/{:}/pred_sdf-{:}'.format(model_name, ic), vis_out['sdf'][ic-1], epoch)
             writer.add_image('val/{:}/gnorm_err-{:}'.format(model_name, ic), vis_out['err'][ic-1], epoch)            
     
-    if model_name in ['fno_2d', 'unet_2d', 'pino_2d']:
+    if model_name in ['fno_2d', 'unet_2d', 'pino_2d', 'uno_2d']:
         image = sample['image'][0].detach().cpu().as_tensor()
         boundary = sample['boundary'][0].detach().cpu().as_tensor()
         pred = sample['pred'][0].detach().cpu().as_tensor()
@@ -201,7 +202,7 @@ def vis_result(sample, writer, epoch, model_name):
             writer.add_image('val/{:}/pred_sdf-{:}'.format(model_name, ic), vis_out['sdf'][ic-1], epoch)
             writer.add_image('val/{:}/op_err-{:}'.format(model_name, ic), vis_out['err'][ic-1], epoch)
     
-    if model_name in ['fno_3d', 'unet_3d', 'pino_3d']:
+    if model_name in ['fno_3d', 'unet_3d', 'pino_3d', 'uno_3d']:
         image = sample['image'][0].detach().cpu().as_tensor()
         boundary = sample['boundary'][0].detach().cpu().as_tensor()
         pred = sample['pred'][0].detach().cpu().as_tensor()
@@ -271,7 +272,7 @@ def run_training(
                 is_update = eval_metrics.update_metrics(writer, epoch, 'DiceMetric', True)
             elif args.model_name in [
                 'fno_2d', 'unet_2d', 'pino_2d', 
-                'unet_3d', 'fno_3d']:
+                'unet_3d', 'fno_3d', 'uno_2d', 'uno_3d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'OPError', False)
             
             eval_metrics.disp_metrics()

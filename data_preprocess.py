@@ -257,25 +257,17 @@ if __name__ == '__main__':
     # preprocess MSD Spleen dataset
     preprocess_3d_dataset(
         origin_dir='/dataset/MSD/Task09_Spleen/', 
-        out_dir='/dataset/MSD/SpleenPreprocess_64x64x64/', 
+        out_dir='/dataset/MSD/SpleenPreprocess_96x96x32/', 
         margin=(32, 32, 32), 
-        spatial_size=(64,64,64),
+        spatial_size=(96,96,32),
         num_workers=16)
     
     preprocess_3d_dataset(
         origin_dir='/dataset/MSD/Task09_Spleen/', 
-        out_dir='/dataset/MSD/SpleenPreprocess_128x128x128/', 
+        out_dir='/dataset/MSD/SpleenPreprocess_192x192x64/', 
         margin=(32, 32, 32), 
-        spatial_size=(128,128,128),
-        num_workers=16)
-    
-    preprocess_3d_dataset(
-        origin_dir='/dataset/MSD/Task09_Spleen/', 
-        out_dir='/dataset/MSD/SpleenPreprocess_256x256x256/', 
-        margin=(32, 32, 32), 
-        spatial_size=(256,256,256),
-        num_workers=16)
-    
+        spatial_size=(192,192,64),
+        num_workers=16)    
     
     # # preprocess segthor dataset
     # preprocess_3d_dataset(

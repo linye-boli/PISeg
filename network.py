@@ -41,7 +41,7 @@ class UNet(nn.Module):
                 spatial_dims=spatial_dims,
                 in_channels=1,
                 out_channels=out_channels,
-                channels=(16, 32, 64, 128, 256),
+                channels=(32, 64, 128, 256, 512),
                 strides=(2, 2, 2, 2),
                 num_res_units=2,
                 norm=Norm.BATCH,)
@@ -321,7 +321,7 @@ class FNO(nn.Module):
                 modes1=[12]*4, modes2=[12]*4, in_dim=3, out_dim=out_channels, width=64)
         if spatial_dims == 3:
             self.fno3d = FNO3d(
-                modes1=[24]*4, modes2=[24]*4, modes3=[24]*4,
+                modes1=[12]*4, modes2=[12]*4, modes3=[12]*4,
                 in_dim=4, out_dim=out_channels, width=16)
         
 
@@ -336,6 +336,35 @@ class FNO(nn.Module):
             grids = coords_like(img, spatial=3, permute=False)
             x = torch.cat([img, grids], axis=1).permute(0,2,3,4,1)        
             u = self.fno3d(x)
+            u_grids = u.permute(0,4,1,2,3)
+
+        return {'outputs':u_grids}
+
+from uno.uno3d import UNO3D
+from uno.uno2d import UNO2D
+
+class UNO(nn.Module):
+    def __init__(self, out_channels, spatial_dims=3):
+        super(UNO, self).__init__()
+
+        self.out_channels = out_channels
+        self.spatial_dims = spatial_dims
+
+        if spatial_dims == 2:
+            self.uno2d = UNO2D(in_width=spatial_dims+1, width=32, out_channel=out_channels)
+        if spatial_dims == 3:
+            self.uno3d = UNO3D(in_width=spatial_dims+1, width=16, out_channel=out_channels)
+    
+    def forward(self, img):
+        if self.spatial_dims == 2:
+            grids = coords_like(img, spatial=2, permute=False)
+            x = torch.cat([img, grids], axis=1).permute(0,2,3,1)        
+            u = self.uno2d(x)
+            u_grids = u.permute(0,3,1,2)
+        if self.spatial_dims == 3:
+            grids = coords_like(img, spatial=3, permute=False)
+            x = torch.cat([img, grids], axis=1).permute(0,2,3,4,1)        
+            u = self.uno3d(x)
             u_grids = u.permute(0,4,1,2,3)
 
         return {'outputs':u_grids}

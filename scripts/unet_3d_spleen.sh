@@ -6,8 +6,8 @@ python main.py \
     --num_cat=2 \
     --optim_lr=1e-3 \
     --lrschedule=warmup_cosine \
-    --traindata_dir=/dataset/MSD/SpleenPreprocess_64x64x64/ \
-    --valdata_dir=/dataset/MSD/SpleenPreprocess_128x128x128/ \
+    --traindata_dir=/dataset/MSD/SpleenPreprocess_96x96x32/ \
+    --valdata_dir=/dataset/MSD/SpleenPreprocess_192x192x64/ \
     --deterministic=1 \
     --max_epochs=2000 \
     --seed=0 \

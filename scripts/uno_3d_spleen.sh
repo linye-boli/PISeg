@@ -1,5 +1,5 @@
 python main.py \
-    --model_name=fno_3d \
+    --model_name=uno_3d \
     --loss_cfg=/workdir/PISeg/PISeg/cfgs/no.yaml \
     --metric_cfg=/workdir/PISeg/PISeg/cfgs/no-metrics.yaml \
     --logdir=/workdir/PISeg/PISeg/runs/ \
@@ -15,4 +15,4 @@ python main.py \
     --val_every=10 \
     --warmup_epochs=10 \
     --outsdf=1 \
-    --device='cuda:1'
+    --device='cuda:0'

@@ -12,7 +12,7 @@ def get_unet3d_loader(
     valdata_dir,
     train_batchsize=2, 
     num_workers=4,
-    num_train=31, 
+    num_train=30,
     a_min=-57, # intensity lower bound
     a_max=164, # intensity upper bound
     sample=False):
