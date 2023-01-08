@@ -31,6 +31,7 @@ class MLP(nn.Module):
 class UNet(nn.Module):
     def __init__(
         self, 
+        in_channels,
         out_channels,
         spatial_dims=3, 
         tanh=False):
@@ -39,7 +40,7 @@ class UNet(nn.Module):
         if spatial_dims == 3:
             unet = UNet_monai(
                 spatial_dims=spatial_dims,
-                in_channels=1,
+                in_channels=in_channels,
                 out_channels=out_channels,
                 channels=(32, 64, 128, 256, 512),
                 strides=(2, 2, 2, 2),
@@ -48,7 +49,7 @@ class UNet(nn.Module):
         else:
             unet = UNet_monai(
                 spatial_dims=spatial_dims,
-                in_channels=1,
+                in_channels=in_channels,
                 out_channels=out_channels,
                 channels=(32, 64, 128, 256, 512),
                 strides=(2, 2, 2, 2),
@@ -310,19 +311,20 @@ from pino.fourier2d import FNO2d
 from pino.fourier3d import FNO3d
 
 class FNO(nn.Module):
-    def __init__(self, out_channels, spatial_dims=3):
+    def __init__(self, in_channels, out_channels, spatial_dims=3):
         super(FNO, self).__init__()
-        
+
+        self.in_channels = in_channels        
         self.out_channels = out_channels
         self.spatial_dims = spatial_dims
 
         if spatial_dims == 2:
             self.fno2d = FNO2d(
-                modes1=[12]*4, modes2=[12]*4, in_dim=3, out_dim=out_channels, width=64)
+                modes1=[12]*4, modes2=[12]*4, in_dim=in_channels + spatial_dims, out_dim=out_channels, width=64)
         if spatial_dims == 3:
             self.fno3d = FNO3d(
-                modes1=[12]*4, modes2=[12]*4, modes3=[12]*4,
-                in_dim=4, out_dim=out_channels, width=16)
+                modes1=[12]*4, modes2=[12]*4, modes3=[6]*4,
+                in_dim=in_channels + spatial_dims, out_dim=out_channels, width=32)
         
 
     def forward(self, img):
@@ -344,16 +346,17 @@ from uno.uno3d import UNO3D
 from uno.uno2d import UNO2D
 
 class UNO(nn.Module):
-    def __init__(self, out_channels, spatial_dims=3):
+    def __init__(self, in_channels, out_channels, spatial_dims=3):
         super(UNO, self).__init__()
 
+        self.in_channels = in_channels
         self.out_channels = out_channels
         self.spatial_dims = spatial_dims
 
         if spatial_dims == 2:
-            self.uno2d = UNO2D(in_width=spatial_dims+1, width=32, out_channel=out_channels)
+            self.uno2d = UNO2D(in_width=spatial_dims+in_channels, width=32, out_channel=out_channels)
         if spatial_dims == 3:
-            self.uno3d = UNO3D(in_width=spatial_dims+1, width=16, out_channel=out_channels)
+            self.uno3d = UNO3D(in_width=spatial_dims+in_channels, width=16, out_channel=out_channels)
     
     def forward(self, img):
         if self.spatial_dims == 2:

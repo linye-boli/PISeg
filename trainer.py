@@ -40,10 +40,15 @@ def train_epoch(
             outputs = model(inps, feats)
         
         if args.model_name in [
-            'unet_2d', 'fno_2d', 'pino_2d',
-            'unet_3d', 'fno_3d', 'pino_3d',
+            'unet_2d', 'fno_2d', 'pino_2d', 'fno_3d-b',
+            'unet_3d', 'fno_3d', 'pino_3d', 'unet_3d-b', 'uno_3d-b'
             'uno_2d', 'uno_3d']:
-            inps = batch_data['image'].to(device)
+
+            if '-b' in args.model_name:
+                inps = batch_data['boundary'].to(device)
+            else:
+                inps = batch_data['image'].to(device)
+
             label = batch_data['label'].to(device)
             boundary = batch_data['boundary'].to(device)
             sdf = batch_data['sdf'].to(device)
@@ -126,9 +131,13 @@ def val_epoch(
                     'sdf' : output['outputs'], 'boundary': boundary, 'pred' : post_pred, 'image' : inps, 'gnorm': output['grad_norms']}
         
         if args.model_name in [
-            'fno_2d', 'pino_2d', 'unet_2d', 
-            'unet_3d', 'fno_3d', 'uno_2d', 'uno_3d']:
-            inps = batch_data['image'].to(device)
+            'fno_2d', 'pino_2d', 'unet_2d', 'uno_3d-b',
+            'unet_3d', 'fno_3d', 'uno_2d', 'uno_3d', 'unet_3d-b', 'fno_3d-b']:
+
+            if '-b' in args.model_name:
+                inps = batch_data['boundary'].to(device)
+            else:
+                inps = batch_data['image'].to(device)
             label = batch_data['label'].to(device)
             boundary = batch_data['boundary'].to(device)
             sdf = batch_data['sdf'].to(device)
@@ -193,7 +202,7 @@ def vis_result(sample, writer, epoch, model_name):
         sdf = sample['sdf'][0].detach().cpu().as_tensor()
         gt_sdf = sample['gt_sdf'][0].detach().cpu().as_tensor()
         err = (sdf - gt_sdf).abs()
-        vis_out = draw_unet2d_result(image, pred, boundary, sdf, err, levels= [-.2,-.1,0,.1,.2])
+        vis_out = draw_unet2d_result(image, pred, boundary, sdf, err, levels= [-.2,-.1,0,.1,.2], err_rng=[0, 0.03])
         nc = pred.shape[0]
 
         for ic in range(1, nc):
@@ -202,14 +211,14 @@ def vis_result(sample, writer, epoch, model_name):
             writer.add_image('val/{:}/pred_sdf-{:}'.format(model_name, ic), vis_out['sdf'][ic-1], epoch)
             writer.add_image('val/{:}/op_err-{:}'.format(model_name, ic), vis_out['err'][ic-1], epoch)
     
-    if model_name in ['fno_3d', 'unet_3d', 'pino_3d', 'uno_3d']:
+    if model_name in ['fno_3d', 'unet_3d', 'pino_3d', 'uno_3d', 'fno_3d-b', 'unet_3d-b', 'uno_3d-b']:
         image = sample['image'][0].detach().cpu().as_tensor()
         boundary = sample['boundary'][0].detach().cpu().as_tensor()
         pred = sample['pred'][0].detach().cpu().as_tensor()
         sdf = sample['sdf'][0].detach().cpu().as_tensor()
         gt_sdf = sample['gt_sdf'][0].detach().cpu().as_tensor()
         err = (sdf - gt_sdf).abs()
-        vis_out = draw_unet3d_result(image, pred, boundary, sdf, err, alpha=0.4, levels= [-.2,-.1,0,.1,.2])
+        vis_out = draw_unet3d_result(image, pred, boundary, sdf, err, alpha=0.4, levels= [-.2,-.1,0,.1,.2], err_rng=[0, 0.1])
         nc = pred.shape[0]
 
         for ic in range(1, nc):
@@ -271,7 +280,7 @@ def run_training(
             elif args.model_name in ['fadeeponet_2d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'DiceMetric', True)
             elif args.model_name in [
-                'fno_2d', 'unet_2d', 'pino_2d', 
+                'fno_2d', 'unet_2d', 'pino_2d', 'fno_3d-b', 'unet_3d-b', 'uno3d-b',
                 'unet_3d', 'fno_3d', 'uno_2d', 'uno_3d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'OPError', False)
             

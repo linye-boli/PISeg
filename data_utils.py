@@ -45,9 +45,9 @@ def get_unet3d_loader(
 
 
     if sample:
-        train_files, val_files = traindata_dicts[:4], traindata_dicts[-4:]
+        train_files, val_files = traindata_dicts[:4], valdata_dicts[-4:]
     else:
-        train_files, val_files = valdata_dicts[:num_train], valdata_dicts[num_train:]
+        train_files, val_files = traindata_dicts[:num_train], valdata_dicts[num_train:]
 
         # setup transforms for training and validation 
             # setup transforms for training and validation 
@@ -64,7 +64,7 @@ def get_unet3d_loader(
                 prob=0.5, keep_size=True, mode=['bilinear', 'nearest', 'bilinear', 'nearest'],  align_corners=True),
             transforms.RandFlipd(
                 keys=["image", "label", "sdf", "boundary"], 
-                prob=0.1, spatial_axis=[0,1,2])
+                prob=0.1, spatial_axis=[0,1,2]),
         ])
 
     val_transforms = transforms.Compose(

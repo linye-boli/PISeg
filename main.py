@@ -52,6 +52,8 @@ parser.add_argument(
 parser.add_argument(
     "--num_cat", default=None, type=int, help="number of category including bg")
 parser.add_argument(
+    "--in_dim", default=1, type=int, help="number of channels of inputs")
+parser.add_argument(
     "--max_epochs", default=1000, type=int, help="max number of training epochs")
 parser.add_argument(
     "--batch_size", default=8, type=int, help="number of batch size")
@@ -92,6 +94,7 @@ def main():
     if args.model_name in [
         'fno_2d', 'unet_2d', 'pino_2d', 'uno_2d',
         'fno_3d', 'unet_3d', 'pino_3d', 'uno_3d',
+        'fno_3d-b', 'unet_3d-b',
         'deeponet_2d', 'fadeeponet_2d']:
         args.logdir = os.path.join(
             args.logdir, args.model_name, 'seed_{:}'.format(args.seed))
@@ -126,7 +129,7 @@ def main():
             train_batchsize=args.batch_size,
             num_workers = args.workers)
     if args.model_name in [
-        'unet_3d', 'fno_3d', 'pino_3d',
+        'unet_3d', 'fno_3d', 'pino_3d', 'unet_3d-b', 'fno_3d-b',
         'uno_3d']:
         train_loader, val_loader = get_unet3d_loader(
             traindata_dir = args.traindata_dir,
@@ -154,22 +157,22 @@ def main():
         model = DeepONet(spatial_dim=2, out_channels=args.num_cat, feat_dim=100)
     
     if args.model_name == 'unet_2d':
-        model = UNet(spatial_dims=2, out_channels=args.num_cat, tanh=args.tanh)
-    if args.model_name == 'unet_3d':
-        model = UNet(spatial_dims=3, out_channels=args.num_cat, tanh=args.tanh)
+        model = UNet(spatial_dims=2, in_channels=args.in_dim, out_channels=args.num_cat, tanh=args.tanh)
+    if args.model_name in ['unet_3d', 'unet_3d-b']:
+        model = UNet(spatial_dims=3, in_channels=args.in_dim, out_channels=args.num_cat, tanh=args.tanh)
 
     if args.model_name == 'uno_2d':
-        model = UNO(spatial_dims=2, out_channels=args.num_cat)
-    if args.model_name == 'uno_3d':
-        model = UNO(spatial_dims=3, out_channels=args.num_cat)
+        model = UNO(spatial_dims=2, in_channels=args.in_dim, out_channels=args.num_cat)
+    if args.model_name in ['uno_3d', 'uno_3d-b']:
+        model = UNO(spatial_dims=3, in_channels=args.in_dim, out_channels=args.num_cat)
 
 
     if args.model_name == 'fadeeponet_2d':
         model = FADeepONet(spatial_dims=2, out_channels=args.num_cat)
     if args.model_name in ['fno_2d', 'pino_2d']:
-        model = FNO(spatial_dims=2, out_channels=args.num_cat)
-    if args.model_name in ['fno_3d', 'pino_3d']:
-        model = FNO(spatial_dims=3, out_channels=args.num_cat)
+        model = FNO(spatial_dims=2, in_channels=args.in_dim, out_channels=args.num_cat)
+    if args.model_name in ['fno_3d', 'pino_3d', 'fno_3d-b']:
+        model = FNO(spatial_dims=3, in_channels=args.in_dim, out_channels=args.num_cat)
     
 
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

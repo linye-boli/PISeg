@@ -336,7 +336,7 @@ def draw_pinns3d_result(boundary, ls, num_slice=10, levels=[-0.5, -0.1, 0, 0.1, 
     
     return {'sdf3d' : sdf3d}
 
-def draw_unet3d_result(img, pred, boundary, ls=None, err=None, num_slice=10, alpha=0.2, levels=[-0.5, -0.1, 0, 0.1, 0.5]):
+def draw_unet3d_result(img, pred, boundary, ls=None, err=None, num_slice=10, alpha=0.2, levels=[-0.5, -0.1, 0, 0.1, 0.5], err_rng=[0, 0.1]):
     nc, nx, ny, nz = boundary.shape
 
     pred3d = {}
@@ -399,7 +399,7 @@ def draw_unet3d_result(img, pred, boundary, ls=None, err=None, num_slice=10, alp
                 fig = Figure(figsize=(4,4), dpi=100)
                 canvas = FigureCanvasAgg(fig)
                 ax = fig.add_subplot()
-                im = ax.imshow(se, cmap='jet', extent=(-1,1,1,-1), vmin=0, vmax=0.03)
+                im = ax.imshow(se, cmap='jet', extent=(-1,1,1,-1), vmin=err_rng[0], vmax=err_rng[1])
                 divider = make_axes_locatable(ax)
                 cax = divider.append_axes('right', size='2%', pad=0.1)
                 cbar = fig.colorbar(im, cax=cax, orientation='vertical')
