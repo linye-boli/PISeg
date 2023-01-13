@@ -8,6 +8,7 @@ import skfmm
 from tqdm import tqdm 
 from utils import levelset2boundary, levelset2boundary2D
 from torchvision.transforms.functional import rgb_to_grayscale
+import torch 
 
 def preprocess_3d_dataset(
     origin_dir, 
@@ -136,7 +137,8 @@ def preprocess_3d_dataset(
             np.savez_compressed(boundary_outpath, boundary)
             print('save boundary at : ', boundary_outpath)
 
-
+import pdb 
+from utils import resize
 def preprocess_2d_dataset(
     origin_dir, 
     out_dir, 
@@ -165,7 +167,7 @@ def preprocess_2d_dataset(
             transforms.LoadImaged(keys=['image', 'label']),
             transforms.EnsureChannelFirstd(keys=["image", "label"]),
             transforms.CropForegroundd(keys=['image', 'label'], source_key='label', margin=margin),
-            transforms.Resized(keys=['image', 'label'], spatial_size=spatial_size, mode=['bilinear', 'nearest'])
+            # transforms.Resized(keys=['image', 'label'], spatial_size=spatial_size, mode=['bilinear', 'nearest'])
             ])
 
     ds = CacheDataset(
@@ -210,12 +212,14 @@ def preprocess_2d_dataset(
             image = sample['image']
             if image.shape[0] != 1:
                 image = rgb_to_grayscale(image)
-            image = image.numpy().astype('uint8')
+            image = resize(image[None], spatial_size)
+            image = image.numpy().astype('uint8')[0]
             np.savez_compressed(img_outpath, image)
             print('save image at : ', img_outpath)
         
         if not os.path.exists(label_outpath):
             label = sample['label']
+            label = resize(label[None], spatial_size, mode='nearest')[0]
             label = label.numpy().astype('uint8')
             np.savez_compressed(label_outpath, label)
             print('save label at : ', label_outpath)
@@ -223,6 +227,7 @@ def preprocess_2d_dataset(
         if (not os.path.exists(sdf_outpath)) or (not os.path.exists(cnt_outpath)):
             label = sample['label']
             label = label[0].numpy().astype('uint8')
+            nx, ny = label.shape
             sdf = []
             boundary = []
             cnt = []
@@ -232,42 +237,50 @@ def preprocess_2d_dataset(
                 # inside object is positive
                 label_ = label == c
                 label_ = label_ - 0.5
-                bd_, cnt_ = levelset2boundary2D(label_, True)
+                bd_ = levelset2boundary2D(label_, False)
                 ls_ = label_*(1-bd_)
-                sdf_ = skfmm.distance(ls_, dx=(1/(spatial_size[0]-1), 1/(spatial_size[1]-1)), order=1)
+
+                sdf_ = skfmm.distance(ls_, dx=(1/nx, 1/ny))
+                sdf_ = torch.tensor(sdf_)[None][None]
+                bd_ = torch.tensor(bd_)[None][None]
+
+                # import pdb 
+                # pdb.set_trace()
+
+                sdf_ = resize(sdf_, spatial_size)[0][0].numpy()
+                bd_ = (resize(bd_, spatial_size)[0] > 0)[0].numpy()
                 sdf.append(sdf_)
-                boundary.append(bd_)
-                cnt.append(cnt_)
+                boundary.append(bd_ > 0)
             
             sdf = np.stack(sdf, axis=0).astype(np.float32)
             np.savez_compressed(sdf_outpath, sdf)
             print('save sdf at : ', sdf_outpath)
 
-            boundary = np.stack(boundary, axis=0).astype(np.bool)
+            boundary = np.stack(boundary, axis=0).astype(np.bool_)
             np.savez_compressed(boundary_outpath, boundary)
             print('save boundary at : ', boundary_outpath)
 
-            cnt = np.stack(cnt, axis=0).astype(np.float32)
-            np.savez_compressed(cnt_outpath, cnt)
-            print('save cnt at : ', cnt_outpath)
+            # cnt = np.stack(cnt, axis=0).astype(np.float32)
+            # np.savez_compressed(cnt_outpath, cnt)
+            # print('save cnt at : ', cnt_outpath)
 
 
 if __name__ == '__main__':
 
     # preprocess MSD Spleen dataset
-    preprocess_3d_dataset(
-        origin_dir='/dataset/MSD/Task09_Spleen/', 
-        out_dir='/dataset/MSD/SpleenPreprocess_96x96x32/', 
-        margin=(32, 32, 32), 
-        spatial_size=(96,96,32),
-        num_workers=16)
+    # preprocess_3d_dataset(
+    #     origin_dir='/dataset/MSD/Task09_Spleen/', 
+    #     out_dir='/dataset/MSD/SpleenPreprocess_96x96x32/', 
+    #     margin=(32, 32, 32), 
+    #     spatial_size=(96,96,32),
+    #     num_workers=16)
     
-    preprocess_3d_dataset(
-        origin_dir='/dataset/MSD/Task09_Spleen/', 
-        out_dir='/dataset/MSD/SpleenPreprocess_192x192x64/', 
-        margin=(32, 32, 32), 
-        spatial_size=(192,192,64),
-        num_workers=16)    
+    # preprocess_3d_dataset(
+    #     origin_dir='/dataset/MSD/Task09_Spleen/', 
+    #     out_dir='/dataset/MSD/SpleenPreprocess_192x192x64/', 
+    #     margin=(32, 32, 32), 
+    #     spatial_size=(192,192,64),
+    #     num_workers=16)    
     
     # # preprocess segthor dataset
     # preprocess_3d_dataset(
@@ -292,23 +305,23 @@ if __name__ == '__main__':
     #     spatial_size=(64, 64)
     # )
 
-    # preprocess_2d_dataset(
-    #     origin_dir = '/dataset/CXR',
-    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_128x128',
-    #     margin=256,
-    #     spatial_size=(128, 128)
-    # )
+    preprocess_2d_dataset(
+        origin_dir = '/dataset/CXR',
+        out_dir = '/dataset/CXR/leftlungSZPreprocess_128x128',
+        margin=256,
+        spatial_size=(128, 128)
+    )
     
-    # preprocess_2d_dataset(
-    #     origin_dir = '/dataset/CXR',
-    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
-    #     margin=256,
-    #     spatial_size=(256, 256)
-    # )
+    preprocess_2d_dataset(
+        origin_dir = '/dataset/CXR',
+        out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
+        margin=256,
+        spatial_size=(256, 256)
+    )
 
-    # preprocess_2d_dataset(
-    #     origin_dir = '/dataset/CXR',
-    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
-    #     margin=256,
-    #     spatial_size=(512, 512)
-    # )
+    preprocess_2d_dataset(
+        origin_dir = '/dataset/CXR',
+        out_dir = '/dataset/CXR/leftlungSZPreprocess_512x512',
+        margin=256,
+        spatial_size=(512, 512)
+    )

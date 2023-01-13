@@ -3,3 +3,7 @@ DiceLoss :
       to_onehot_y : True 
       softmax : True 
     w : 1
+FMMLoss : 
+    kargs : 
+      reduction : 'mean'
+    w : 0.

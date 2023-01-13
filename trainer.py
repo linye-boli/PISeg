@@ -145,6 +145,9 @@ def val_epoch(
             output = model(inps)
             if args.outsdf:
                 output['pred'] = nsdf2prob(output['outputs'])
+            else:
+                output['pred'] = output['outputs']
+                
             post_pred = [post_trans['pred'](i) for i in decollate_batch(output['pred'])]
             post_label = [post_trans['label'](i) for i in decollate_batch(label)]
             
@@ -277,7 +280,7 @@ def run_training(
 
             if args.model_name in ['pinns_2d', 'deeponet_2d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'PDEError', False)
-            elif args.model_name in ['fadeeponet_2d']:
+            elif args.model_name in ['fadeeponet_2d', 'unet_2d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'DiceMetric', True)
             elif args.model_name in [
                 'fno_2d', 'unet_2d', 'pino_2d', 'fno_3d-b', 'unet_3d-b', 'uno3d-b',

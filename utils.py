@@ -240,7 +240,7 @@ def draw_pinns2d_result(boundary, ls, levels=[-0.5, -0.1, 0, 0.1, 0.5]):
     
     return {'sdf' : im_lst}
 
-def draw_unet2d_result(img, pred, boundary, ls=None, err=None, alpha=0.2, levels=[-0.5, -0.1, 0, 0.1, 0.5]):
+def draw_unet2d_result(img, pred, boundary, ls=None, err=None, alpha=0.2, levels=[-0.5, -0.1, 0, 0.1, 0.5], err_rng=[0,0.1]):
     nc, ny, nx = boundary.shape
     x, y = np.linspace(-1,1,num=nx), np.linspace(-1,1,num=ny)
     X, Y = np.meshgrid(x, y)
@@ -280,7 +280,7 @@ def draw_unet2d_result(img, pred, boundary, ls=None, err=None, alpha=0.2, levels
             fig = Figure(figsize=(4,4), dpi=100)
             canvas = FigureCanvasAgg(fig)
             ax = fig.add_subplot()
-            im = ax.imshow(err[ic], cmap='jet', extent=(-1,1,1,-1), vmin=0, vmax=0.03)
+            im = ax.imshow(err[ic], cmap='jet', extent=(-1,1,1,-1), vmin=err_rng[0], vmax=err_rng[1])
             divider = make_axes_locatable(ax)
             cax = divider.append_axes('right', size='2%', pad=0.1)
             cbar = fig.colorbar(im, cax=cax, orientation='vertical')
@@ -456,3 +456,10 @@ def random_subvolume(u, grids, sub_dim, spatial=3):
         grids_sub = torch.index_select(grids_sub, 3, ys)
 
     return u_sub, grids_sub
+
+def resize(image, size, mode='bilinear'):
+    if mode == 'nearest':
+        image_resize = F.interpolate(image, size, mode=mode)
+    else:
+        image_resize = F.interpolate(image, size, mode=mode, align_corners=True)
+    return image_resize
