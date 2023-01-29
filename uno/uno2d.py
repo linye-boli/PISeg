@@ -30,10 +30,10 @@ class UNO2D(nn.Module):
         self.G1 = OperatorBlock_2D(2*self.width, 4*self.width, 16, 16, 6,6)
         self.G2 = OperatorBlock_2D(4*self.width, 8*self.width, 8, 8,3,3)
         self.G3 = OperatorBlock_2D(8*self.width, 16*self.width, 4, 4,2,2)
-        self.G4 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)
-        self.G5 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)
-        self.G6 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)        
-        self.G7 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)
+        # self.G4 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)
+        # self.G5 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)
+        # self.G6 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)        
+        # self.G7 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)
         self.G8 = OperatorBlock_2D(16*self.width, 16*self.width, 4, 4,2,2)   
         self.G9 = OperatorBlock_2D(16*self.width, 8*self.width, 8, 8,2,2)
         self.G10 = OperatorBlock_2D(16*self.width, 4*self.width, 16, 16,3,3)
@@ -56,11 +56,11 @@ class UNO2D(nn.Module):
         x_c1 = self.G1(x_c0,D1//4,D2//4)   # 64x16x16
         x_c2 = self.G2(x_c1,D1//8,D2//8)   # 128x8x8
         x_c3 = self.G3(x_c2,D1//16,D2//16) # 256x4x4
-        x_c4 = self.G4(x_c3,D1//16,D2//16) # 256x4x4
-        x_c5 = self.G5(x_c4,D1//16,D2//16) # 256x4x4
-        x_c6 = self.G6(x_c5,D1//16,D2//16) # 256x4x4
-        x_c7 = self.G7(x_c6,D1//16,D2//16) # 256x4x4
-        x_c8 = self.G8(x_c7,D1//16,D2//16) # 256x4x4
+        # x_c4 = self.G4(x_c3,D1//16,D2//16) # 256x4x4
+        # x_c5 = self.G5(x_c4,D1//16,D2//16) # 256x4x4
+        # x_c6 = self.G6(x_c5,D1//16,D2//16) # 256x4x4
+        # x_c7 = self.G7(x_c4,D1//16,D2//16) # 256x4x4
+        x_c8 = self.G8(x_c3,D1//16,D2//16) # 256x4x4
         x_c9 = self.G9(x_c8,D1//8,D2//8)   # 128x8x8
         x_c9 = torch.cat([x_c9, x_c2], dim=1) # (128+128)x8x8
         x_c10 = self.G10(x_c9 ,D1//4,D2//4) # 64x16x16

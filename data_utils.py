@@ -129,7 +129,7 @@ def get_unet2d_loader(
         for image_name, label_name, sdf_name, boundary_name in zip(val_images, val_labels, val_sdfs, val_boundaries)]
 
     if sample:
-        train_files, val_files = traindata_dicts[:40], valdata_dicts[-40:]
+        train_files, val_files = traindata_dicts[:500], valdata_dicts[-100:]
     else:
         train_files, val_files = traindata_dicts[:num_train], valdata_dicts[num_train:]
 
@@ -143,14 +143,12 @@ def get_unet2d_loader(
             transforms.ScaleIntensityRanged(
                 keys=["image"], a_min=a_min, a_max=a_max,
                 b_min=0.0, b_max=1.0, clip=True),
-            transforms.RandRotated(
+            transforms.RandRotate90d(
                 keys=["image", "label", "sdf", "boundary"], 
-                range_x=0.4, range_y=0.4,
-                prob=0.5, keep_size=True, 
-                mode=['bilinear', 'nearest', 'bilinear', 'nearest'],  align_corners=True),
-            transforms.RandFlipd(
+                prob=0.5, spatial_axes=[0,1]),
+            transforms.RandAxisFlipd(
                 keys=["image", "label", "sdf", "boundary"], 
-                prob=0.1, spatial_axis=[0,1])
+                prob=0.5)
         ])
 
     val_transforms = transforms.Compose(

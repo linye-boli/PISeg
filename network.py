@@ -307,8 +307,74 @@ class FADeepONet(nn.Module):
 
         return outputs
 
-from pino.fourier2d import FNO2d
+from pino.fourier2d import FNO2d, FNOPlus2d
 from pino.fourier3d import FNO3d
+from uno.integral_operators import OperatorBlock_2D
+
+class MIXNO(nn.Module):
+    def __init__(self, in_channels, out_channels, lr=128, spatial_dims=3):
+        super(MIXNO, self).__init__()
+
+        self.in_channels = in_channels        
+        self.out_channels = out_channels
+        self.spatial_dims = spatial_dims
+        self.lr= lr
+
+        if spatial_dims == 2:
+            
+            unet = UNet_monai(
+                spatial_dims=spatial_dims,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                channels=(32, 64, 128, 256, 512),
+                strides=(2, 2, 2, 2),
+                num_res_units=2,
+                norm=Norm.BATCH,)
+
+            _, skip, up = list(unet.model.children())
+            self.skip = skip
+            self.aux = up
+            self.down = OperatorBlock_2D(
+                in_codim=in_channels+spatial_dims, out_codim=32, dim1=32,dim2=32,modes1=12,modes2=12)
+            self.up = OperatorBlock_2D(
+                in_codim=64, out_codim=32, dim1=32,dim2=32,modes1=12,modes2=12)
+            self.out = Convolution(
+                spatial_dims=spatial_dims, in_channels=32, out_channels=out_channels,
+                 kernel_size=1, strides=1, padding=0, adn_ordering='A')
+
+        if spatial_dims == 3:
+            self.fno3d = FNO3d(
+                modes1=[12]*4, modes2=[12]*4, modes3=[6]*4,
+                in_dim=in_channels + spatial_dims, out_dim=out_channels, width=32)
+        
+
+    def forward(self, img):
+
+        if self.spatial_dims == 2:
+
+            hr_x, hr_y = img.size(2), img.size(3)
+            img_grids = coords_like(img, spatial=2, permute=False)
+            feat_hr = torch.cat([img, img_grids], axis=1)
+            feat_lr = self.down(feat_hr, self.lr//2, self.lr//2)
+            feat_lr = self.skip(feat_lr)
+            y_lr = self.aux(feat_lr)
+            feat_hr = self.up(feat_lr, hr_x, hr_y)
+            u_grids = self.out(feat_hr)
+
+            # import pdb
+            # pdb.set_trace()
+
+            # feat_lr = torch.cat([feat_lr, feat_grids], axis=1).permute(0,2,3,1)        
+            # u = self.fno2d(x, y_lr)
+            # u_grids = u.permute(0,3,1,2)
+
+        if self.spatial_dims == 3:
+            grids = coords_like(img, spatial=3, permute=False)
+            x = torch.cat([img, grids], axis=1).permute(0,2,3,4,1)        
+            u = self.fno3d(x)
+            u_grids = u.permute(0,4,1,2,3)
+
+        return {'outputs':u_grids, 'outputs_lr':y_lr}
 
 class FNO(nn.Module):
     def __init__(self, in_channels, out_channels, spatial_dims=3):
@@ -376,15 +442,19 @@ class UNO(nn.Module):
 
 
 if __name__ == '__main__':
-    img3d = torch.rand((4,1,64,64,32))
-    img2d = torch.rand((4,1,64,64))
-    feat3d = torch.rand((4,256,64,64,32))
-    feat2d = torch.rand((4,256,64,64))
-    grids3d = coords_like(img3d, spatial=3)
-    grids2d = coords_like(img2d, spatial=2)
+    # img3d = torch.rand((4,1,64,64,32))
+    # img2d = torch.rand((4,1,64,64))
+    # feat3d = torch.rand((4,256,64,64,32))
+    # feat2d = torch.rand((4,256,64,64))
+    # grids3d = coords_like(img3d, spatial=3)
+    # grids2d = coords_like(img2d, spatial=2)
 
-    # deeponet3d = DeepONet(spatial_dim=3, out_channels=2, feat_dim=256)
-    # outputs = deeponet3d(grids3d, feat3d)
+    # # deeponet3d = DeepONet(spatial_dim=3, out_channels=2, feat_dim=256)
+    # # outputs = deeponet3d(grids3d, feat3d)
 
-    deeponet2d = DeepONet(spatial_dim=2, out_channels=5, feat_dim=256)
-    u2d = deeponet2d(grids2d, feat2d)
+    # deeponet2d = DeepONet(spatial_dim=2, out_channels=5, feat_dim=256)
+    # u2d = deeponet2d(grids2d, feat2d)
+
+    mixno = MIXNO(in_channels=1, out_channels=2, spatial_dims=2)
+    img = torch.rand((5,1,128,128))
+    out = mixno(img)

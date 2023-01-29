@@ -277,11 +277,23 @@ class Losses:
         loss_out = 0
         for nm, loss in self.loss_dict.items():
             if (nm == 'DiceLoss') or (nm == 'GeneralizedDiceLoss'):
+
+                # diceloss = loss['func'](
+                #         nsdf2prob(outputs['outputs']), gts['label'])
+                
                 if self.outsdf:
-                    diceloss = loss['func'](
-                        nsdf2prob(outputs['outputs']), gts['label'])
+                    if ('outputs_lr' in outputs.keys()):
+                        diceloss = loss['func'](F.softmax(outputs['outputs_lr'], dim=1), gts['label'])
+                        diceloss += loss['func'](nsdf2prob(outputs['outputs']), gts['label'])
+                        diceloss /= 2
+                    else:
+                        diceloss = loss['func'](nsdf2prob(outputs['outputs']), gts['label'])
                 else:
                     diceloss = loss['func'](outputs['outputs'], gts['label'])
+                    if ('outputs_lr' in outputs.keys()):
+                        diceloss += loss['func'](outputs['outputs_lr'], gts['label'])
+                        diceloss /= 2
+
                 loss['logger'].update(diceloss.item(), n=bs)
                 loss_out += diceloss * loss['w']
             if nm == 'BoundaryLoss':

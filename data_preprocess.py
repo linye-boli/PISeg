@@ -144,17 +144,21 @@ def preprocess_2d_dataset(
     out_dir, 
     margin=256,       # margin to expand
     spatial_size=(64, 128), # size to pad
-    num_workers=16):
+    num_workers=16,
+    num_cls = 2,
+    cache_rate=1,
+    img_postfix='.png', 
+    seg_postfix='_mask.png'):
     
-    imgs_dir = os.path.join(origin_dir, 'CXR_png')
-    segs_dir = os.path.join(origin_dir, 'LeftMask_png')
+    imgs_dir = os.path.join(origin_dir, 'images')
+    segs_dir = os.path.join(origin_dir, 'masks')
 
     imgs = []
     segs = []
     nms = [nm.split('.')[0] for nm in os.listdir(imgs_dir)]
     for nm in nms:
-        img_path = os.path.join(imgs_dir, nm + '.png')
-        seg_path = os.path.join(segs_dir, nm + '_mask.png')
+        img_path = os.path.join(imgs_dir, nm + img_postfix)
+        seg_path = os.path.join(segs_dir, nm + seg_postfix)
 
         if os.path.isfile(img_path) & os.path.isfile(seg_path):
             imgs.append(img_path)
@@ -172,7 +176,7 @@ def preprocess_2d_dataset(
 
     ds = CacheDataset(
         data=files, transform=trans,
-        cache_rate=1.0, num_workers=num_workers)
+        cache_rate=cache_rate, num_workers=num_workers)
     
     # create dataset file structure
     if not os.path.exists(out_dir):
@@ -232,25 +236,27 @@ def preprocess_2d_dataset(
             boundary = []
             cnt = []
 
-            cls = np.unique(label)
+            cls = np.arange(num_cls)
             for c in cls:
+
                 # inside object is positive
                 label_ = label == c
                 label_ = label_ - 0.5
-                bd_ = levelset2boundary2D(label_, False)
-                ls_ = label_*(1-bd_)
 
-                sdf_ = skfmm.distance(ls_, dx=(1/nx, 1/ny))
+                try:
+                    bd_ = levelset2boundary2D(label_, False) # boundary problem for complex image
+                    sdf_ = skfmm.distance(label_, dx=(1/nx, 1/ny))
+                except:
+                    sdf_ = torch.zeros_like(torch.tensor(label_))
+                    bd_ = torch.ones_like(torch.tensor(label_))
+
                 sdf_ = torch.tensor(sdf_)[None][None]
                 bd_ = torch.tensor(bd_)[None][None]
-
-                # import pdb 
-                # pdb.set_trace()
-
+                
                 sdf_ = resize(sdf_, spatial_size)[0][0].numpy()
-                bd_ = (resize(bd_, spatial_size)[0] > 0)[0].numpy()
+                bd_ =  resize(bd_, spatial_size)[0][0].numpy()
                 sdf.append(sdf_)
-                boundary.append(bd_ > 0)
+                boundary.append(bd_ > 0.5)
             
             sdf = np.stack(sdf, axis=0).astype(np.float32)
             np.savez_compressed(sdf_outpath, sdf)
@@ -305,23 +311,80 @@ if __name__ == '__main__':
     #     spatial_size=(64, 64)
     # )
 
-    preprocess_2d_dataset(
-        origin_dir = '/dataset/CXR',
-        out_dir = '/dataset/CXR/leftlungSZPreprocess_128x128',
-        margin=256,
-        spatial_size=(128, 128)
-    )
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CXR',
+    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_128x128',
+    #     margin=256,
+    #     spatial_size=(128, 128)
+    # )
     
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CXR',
+    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
+    #     margin=256,
+    #     spatial_size=(256, 256)
+    # )
+
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CXR',
+    #     out_dir = '/dataset/CXR/leftlungSZPreprocess_512x512',
+    #     margin=256,
+    #     spatial_size=(512, 512)
+    # )
+
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/Oxford-III_PET',
+    #     out_dir = '/dataset/Oxford-III_PET/PETPreprocess_128x128',
+    #     margin=64,
+    #     spatial_size=(128, 128),
+    #     img_postfix='.jpg',
+    #     seg_postfix='.png',
+    # )
+
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/Oxford-III_PET',
+    #     out_dir = '/dataset/Oxford-III_PET/PETPreprocess_256x256',
+    #     margin=64,
+    #     spatial_size=(256, 256),
+    #     img_postfix='.jpg',
+    #     seg_postfix='.png',
+    # )
+
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/Oxford-III_PET',
+    #     out_dir = '/dataset/Oxford-III_PET/PETPreprocess_512x512',
+    #     margin=64,
+    #     spatial_size=(512, 512),
+    #     img_postfix='.jpg',
+    #     seg_postfix='.png',
+    # )
+    
+    # preprocess_2d_dataset(
+    #     origin_dir = '/dataset/CRAG',
+    #     out_dir = '/dataset/CRAG/CRAGPreprocess_256x256',
+    #     margin=0,
+    #     num_cls=2,
+    #     spatial_size=(256, 256),
+    #     img_postfix='.png',
+    #     seg_postfix='.png',
+    # )
+
     preprocess_2d_dataset(
-        origin_dir = '/dataset/CXR',
-        out_dir = '/dataset/CXR/leftlungSZPreprocess_256x256',
-        margin=256,
-        spatial_size=(256, 256)
+        origin_dir = '/dataset/CRAG',
+        out_dir = '/dataset/CRAG/CRAGPreprocess_512x512',
+        margin=0,
+        num_cls=2,
+        spatial_size=(512, 512),
+        img_postfix='.png',
+        seg_postfix='.png',
     )
 
     preprocess_2d_dataset(
-        origin_dir = '/dataset/CXR',
-        out_dir = '/dataset/CXR/leftlungSZPreprocess_512x512',
-        margin=256,
-        spatial_size=(512, 512)
+        origin_dir = '/dataset/CRAG',
+        out_dir = '/dataset/CRAG/CRAGPreprocess_800x800',
+        margin=0,
+        num_cls=2,
+        spatial_size=(800, 800),
+        img_postfix='.png',
+        seg_postfix='.png',
     )

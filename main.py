@@ -27,7 +27,8 @@ from network import (
     CNNDeepONet,
     FADeepONet,
     FNO,
-    UNO
+    UNO,
+    MIXNO
 )
 
 from losses import Losses
@@ -52,6 +53,8 @@ parser.add_argument(
 parser.add_argument(
     "--num_cat", default=None, type=int, help="number of category including bg")
 parser.add_argument(
+    "--num_train", default=500, type=int, help="number of train sampels")
+parser.add_argument(
     "--in_dim", default=1, type=int, help="number of channels of inputs")
 parser.add_argument(
     "--max_epochs", default=1000, type=int, help="max number of training epochs")
@@ -71,6 +74,8 @@ parser.add_argument(
     "--tanh", default=0, type=int, help="whether use tanh as final out layer")
 parser.add_argument(
     "--outsdf", default=0, type=int, help="whether model output is sdf")
+parser.add_argument(
+    "--low_res", default=128, type=int, help="low resolution size")
 parser.add_argument(
     "--loss_cfg", default=None, type=str, help="loss configuration")
 parser.add_argument(
@@ -92,7 +97,7 @@ def main():
         args.logdir = os.path.join(
             args.logdir, args.model_name, str(args.sample_idx), 'seed_{:}'.format(args.seed))
     if args.model_name in [
-        'fno_2d', 'unet_2d', 'pino_2d', 'uno_2d',
+        'fno_2d', 'unet_2d', 'pino_2d', 'uno_2d', 'mixno_2d',
         'fno_3d', 'unet_3d', 'pino_3d', 'uno_3d',
         'fno_3d-b', 'unet_3d-b',
         'deeponet_2d', 'fadeeponet_2d']:
@@ -121,13 +126,16 @@ def main():
             train_batchsize=args.batch_size,
             num_workers = args.workers)
     if args.model_name in [
-        'unet_2d', 'fno_2d', 'pino_2d',
+        'unet_2d', 'fno_2d', 'pino_2d', 'mixno_2d',
         'uno_2d', 'fadeeponet_2d']:
+
         train_loader, val_loader = get_unet2d_loader(
             traindata_dir = args.traindata_dir,
             valdata_dir = args.valdata_dir, 
             train_batchsize=args.batch_size,
-            num_workers = args.workers)
+            num_workers = args.workers,
+            sample=args.is_sample,
+            num_train=args.num_train)
     if args.model_name in [
         'unet_3d', 'fno_3d', 'pino_3d', 'unet_3d-b', 'fno_3d-b',
         'uno_3d']:
@@ -160,6 +168,9 @@ def main():
         model = UNet(spatial_dims=2, in_channels=args.in_dim, out_channels=args.num_cat, tanh=args.tanh)
     if args.model_name in ['unet_3d', 'unet_3d-b']:
         model = UNet(spatial_dims=3, in_channels=args.in_dim, out_channels=args.num_cat, tanh=args.tanh)
+
+    if args.model_name == 'mixno_2d':
+        model = MIXNO(spatial_dims=2, in_channels=args.in_dim, lr=args.low_res, out_channels=args.num_cat)
 
     if args.model_name == 'uno_2d':
         model = UNO(spatial_dims=2, in_channels=args.in_dim, out_channels=args.num_cat)

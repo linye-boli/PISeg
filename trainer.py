@@ -9,6 +9,7 @@ from tensorboardX import SummaryWriter
 from monai.data import decollate_batch
 from torchvision.utils import make_grid
 from utils import sdf_normalization, nsdf2prob, coords_like
+import torch.nn.functional as F
 
 def train_epoch(
     model, loader, optimizer, losses, device, args):
@@ -40,8 +41,8 @@ def train_epoch(
             outputs = model(inps, feats)
         
         if args.model_name in [
-            'unet_2d', 'fno_2d', 'pino_2d', 'fno_3d-b',
-            'unet_3d', 'fno_3d', 'pino_3d', 'unet_3d-b', 'uno_3d-b'
+            'unet_2d', 'fno_2d', 'pino_2d', 'fno_3d-b', 'mixno_2d',
+            'unet_3d', 'fno_3d', 'pino_3d', 'unet_3d-b', 'uno_3d-b',
             'uno_2d', 'uno_3d']:
 
             if '-b' in args.model_name:
@@ -54,6 +55,7 @@ def train_epoch(
             sdf = batch_data['sdf'].to(device)
             gts = {'label' : label, 'boundary' : boundary, 'sdf': sdf}
             optimizer.zero_grad()
+
             outputs = model(inps)
             if args.tanh:                
                 gts['sdf'] = sdf_normalization(gts['sdf'])
@@ -131,7 +133,7 @@ def val_epoch(
                     'sdf' : output['outputs'], 'boundary': boundary, 'pred' : post_pred, 'image' : inps, 'gnorm': output['grad_norms']}
         
         if args.model_name in [
-            'fno_2d', 'pino_2d', 'unet_2d', 'uno_3d-b',
+            'fno_2d', 'pino_2d', 'unet_2d', 'uno_3d-b', 'mixno_2d',
             'unet_3d', 'fno_3d', 'uno_2d', 'uno_3d', 'unet_3d-b', 'fno_3d-b']:
 
             if '-b' in args.model_name:
@@ -142,7 +144,19 @@ def val_epoch(
             boundary = batch_data['boundary'].to(device)
             sdf = batch_data['sdf'].to(device)
             gts = {'label' : label, 'boundary' : boundary, 'sdf': sdf}
-            output = model(inps)
+            
+
+            if args.model_name == 'unet_2d':
+                grids_lr = coords_like(torch.rand((1, 1, args.low_res, args.low_res)), spatial=2, permute=True).to(device)
+                inps_lr = F.grid_sample(inps, grids_lr, mode='bilinear', align_corners=True)
+                output = model(inps_lr)
+            else:
+                output = model(inps)
+
+            if args.model_name == 'unet_2d':
+                grids_hr = coords_like(sdf, spatial=2, permute=True).to(inps)
+                output['outputs'] = F.grid_sample(output['outputs'], grids_hr, mode='bilinear', align_corners=True)
+
             if args.outsdf:
                 output['pred'] = nsdf2prob(output['outputs'])
             else:
@@ -198,14 +212,14 @@ def vis_result(sample, writer, epoch, model_name):
             writer.add_image('val/{:}/pred_sdf-{:}'.format(model_name, ic), vis_out['sdf'][ic-1], epoch)
             writer.add_image('val/{:}/gnorm_err-{:}'.format(model_name, ic), vis_out['err'][ic-1], epoch)            
     
-    if model_name in ['fno_2d', 'unet_2d', 'pino_2d', 'uno_2d']:
+    if model_name in ['fno_2d', 'unet_2d', 'mixno_2d', 'pino_2d', 'uno_2d']:
         image = sample['image'][0].detach().cpu().as_tensor()
         boundary = sample['boundary'][0].detach().cpu().as_tensor()
         pred = sample['pred'][0].detach().cpu().as_tensor()
         sdf = sample['sdf'][0].detach().cpu().as_tensor()
         gt_sdf = sample['gt_sdf'][0].detach().cpu().as_tensor()
         err = (sdf - gt_sdf).abs()
-        vis_out = draw_unet2d_result(image, pred, boundary, sdf, err, levels= [-.2,-.1,0,.1,.2], err_rng=[0, 0.03])
+        vis_out = draw_unet2d_result(image, pred, gt_sdf>0, sdf, err, levels= [-.2,-.1,0,.1,.2], err_rng=[0, 0.03])
         nc = pred.shape[0]
 
         for ic in range(1, nc):
@@ -280,11 +294,11 @@ def run_training(
 
             if args.model_name in ['pinns_2d', 'deeponet_2d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'PDEError', False)
-            elif args.model_name in ['fadeeponet_2d', 'unet_2d']:
+            elif args.model_name in ['fadeeponet_2d', 'unet_2d', 'mixno_2d', 'uno_2d', 'fno_2d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'DiceMetric', True)
             elif args.model_name in [
-                'fno_2d', 'unet_2d', 'pino_2d', 'fno_3d-b', 'unet_3d-b', 'uno3d-b',
-                'unet_3d', 'fno_3d', 'uno_2d', 'uno_3d']:
+                'pino_2d', 'fno_3d-b', 'unet_3d-b', 'uno3d-b',
+                'unet_3d', 'fno_3d', 'uno_3d']:
                 is_update = eval_metrics.update_metrics(writer, epoch, 'OPError', False)
             
             eval_metrics.disp_metrics()
